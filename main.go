@@ -71,13 +71,14 @@ func cgroupv2Demo(){
   if err != nil{
     panic(err)
   }
-  defer os.WriteFile(filepath.Join(demoCgroupPath,"memory.high",),restoreValue, os.ModePerm)
   fmt.Println("Reclaiming memory...")
   if err := os.WriteFile(filepath.Join(demoCgroupPath,"memory.high",),[]byte("1024"), os.ModePerm);err != nil{
     panic(err)
   }
   time.Sleep(time.Second*2)
   //fmt.Printf("Cache after reclaimed: %d\n", cacheInCgroupv2(filepath.Join(demoCgroupPath,"memory.stat")))
+  // Restore the memory.high, otherwise the command free will be executed very slow.
+  os.WriteFile(filepath.Join(demoCgroupPath,"memory.high",),restoreValue, os.ModePerm)
   fmt.Println("Memory usage after reclaimed: ")
   commandFree()
 }
