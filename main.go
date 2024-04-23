@@ -62,7 +62,9 @@ func cgroupv2Demo(){
   }
   defer os.Remove("/tmp/demo_data")
   // Inspect the current value of page/buffer cache
-  fmt.Printf("Cache: %d\n", cacheInCgroupv2(filepath.Join(demoCgroupPath,"memory.stat")))
+  // fmt.Printf("Cache: %d\n", cacheInCgroupv2(filepath.Join(demoCgroupPath,"memory.stat")))
+  fmt.Println("Memory usage: ")
+  commandFree()
   // Trigger memory reclaim.
   // By setting the memory.high to a small value to trigger the memory reclaim. Do not forget to restore the value of memory.high, otherwise the cache will be frequently reclaim on the memory usage is higher than the setted value.
   restoreValue,err := os.ReadFile(filepath.Join(demoCgroupPath,"memory.high"))
@@ -70,11 +72,14 @@ func cgroupv2Demo(){
     panic(err)
   }
   defer os.WriteFile(filepath.Join(demoCgroupPath,"memory.high",),restoreValue, os.ModePerm)
+  fmt.Println("Reclaiming memory...")
   if err := os.WriteFile(filepath.Join(demoCgroupPath,"memory.high",),[]byte("1024"), os.ModePerm);err != nil{
     panic(err)
   }
   time.Sleep(time.Second*2)
-  fmt.Printf("Cache after reclaimed: %d\n", cacheInCgroupv2(filepath.Join(demoCgroupPath,"memory.stat")))
+  //fmt.Printf("Cache after reclaimed: %d\n", cacheInCgroupv2(filepath.Join(demoCgroupPath,"memory.stat")))
+  fmt.Println("Memory usage after reclaimed: ")
+  commandFree()
 }
 
 func cgroupv1Demo(){
@@ -94,13 +99,18 @@ func cgroupv1Demo(){
   }
   defer os.Remove("/tmp/demo_data")
   // Inspect the current value of page/buffer cache
-  fmt.Printf("Cache: %d\n", cacheInCgroupv1(filepath.Join(memorySubsystemPath,"memory.stat")))
+  // fmt.Printf("Cache: %d\n", cacheInCgroupv1(filepath.Join(memorySubsystemPath,"memory.stat")))
+  fmt.Println("Memory usage: ")
+  commandFree()
   // Trigger memory claim.
+  fmt.Println("Reclaiming memory...")
   if err := os.WriteFile(filepath.Join(memorySubsystemPath,"memory.force_empty",),[]byte("1"), os.ModePerm);err != nil{
     panic(err)
   }
   time.Sleep(time.Second*2)
-  fmt.Printf("Cache after reclaimed: %d\n", cacheInCgroupv1(filepath.Join(memorySubsystemPath,"memory.stat")))
+  fmt.Println("Memory usage after reclaimed: ")
+  //fmt.Printf("Cache after reclaimed: %d\n", cacheInCgroupv1(filepath.Join(memorySubsystemPath,"memory.stat")))
+  commandFree()
 }
 
 func cacheInCgroupv1(path string)int{
@@ -149,4 +159,11 @@ func cacheInCgroupv2(path string)int{
   }
 }
 
+func commandFree(){
+  output,err := exec.Command("free","-h").CombinedOutput()
+  if err != nil{
+    panic(err)
+  }
+  fmt.Println(string(output))
+}
 
