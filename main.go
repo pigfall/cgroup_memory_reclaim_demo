@@ -56,10 +56,8 @@ func cgroupv2Demo(){
   if err := os.WriteFile(filepath.Join(demoCgroupPath,"cgroup.procs"),[]byte(fmt.Sprintf("%d",pid)),os.ModePerm);err != nil{
     panic(err)
   }
-  // For incresing page/buffer cache , write 100M data to disk.
-  if err := os.WriteFile("/tmp/demo_data",make([]byte,1024*1024*100),os.ModePerm);err != nil{
-    panic(err)
-  }
+  // For incresing page/buffer cache , write data to disk.
+  allocMemory()
   defer os.Remove("/tmp/demo_data")
   // Inspect the current value of page/buffer cache
   // fmt.Printf("Cache: %d\n", cacheInCgroupv2(filepath.Join(demoCgroupPath,"memory.stat")))
@@ -71,14 +69,13 @@ func cgroupv2Demo(){
   if err != nil{
     panic(err)
   }
+  defer os.WriteFile(filepath.Join(demoCgroupPath,"memory.high",),restoreValue, os.ModePerm)
   fmt.Println("Reclaiming memory...")
   if err := os.WriteFile(filepath.Join(demoCgroupPath,"memory.high",),[]byte("1024"), os.ModePerm);err != nil{
     panic(err)
   }
   time.Sleep(time.Second*2)
   //fmt.Printf("Cache after reclaimed: %d\n", cacheInCgroupv2(filepath.Join(demoCgroupPath,"memory.stat")))
-  // Restore the memory.high, otherwise the command free will be executed very slow.
-  os.WriteFile(filepath.Join(demoCgroupPath,"memory.high",),restoreValue, os.ModePerm)
   fmt.Println("Memory usage after reclaimed: ")
   commandFree()
 }
@@ -94,10 +91,8 @@ func cgroupv1Demo(){
   if err :=os.WriteFile(filepath.Join(memorySubsystemPath,"tasks"),[]byte(fmt.Sprintf("%d",pid)),os.ModePerm);err != nil{
     panic(err)
   }
-  // For incresing page/buffer cache , write 100M data to disk.
-  if err := os.WriteFile("/tmp/demo_data",make([]byte,1024*1024*100),os.ModePerm);err != nil{
-    panic(err)
-  }
+  // For incresing page/buffer cache , write data to disk.
+  allocMemory()
   defer os.Remove("/tmp/demo_data")
   // Inspect the current value of page/buffer cache
   // fmt.Printf("Cache: %d\n", cacheInCgroupv1(filepath.Join(memorySubsystemPath,"memory.stat")))
@@ -168,3 +163,10 @@ func commandFree(){
   fmt.Println(string(output))
 }
 
+func allocMemory(){
+  // 500M
+  err := exec.Command("dd","if=/dev/zero","of=/tmp/test1","bs=10M", "count=50").Run()
+  if err != nil{
+    panic(err)
+  }
+}
