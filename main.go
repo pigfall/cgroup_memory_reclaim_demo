@@ -165,7 +165,7 @@ func commandFree(){
 
 func allocMemory(){
   // 500M
-  err := exec.Command("dd","if=/dev/zero","of=/tmp/test1","bs=10M", "count=50").Run()
+  err := exec.Command("dd","if=/dev/zero","of=/tmp/demo_file","bs=10M", "count=50").Run()
   if err != nil{
     panic(err)
   }
